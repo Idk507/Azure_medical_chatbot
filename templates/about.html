@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About - ONE MED HUB</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header>
+        <nav>
+            <div class="navbar-logo">
+                <img src="{{ url_for('static', filename='img/logo.png') }}" alt="One Med Hub Logo">
+                <span>ONE MED HUB</span>
+            </div>
+           <ul>
+                <li><a href="{{ url_for('serve_html') }}">Home</a></li>
+                <li><a href="{{ url_for('chatbot') }}">Chatbot</a></li>
+                <li><a href="{{ url_for('x_ray') }}">Analysis</a></li>
+                <li><a href="{{ url_for('medilocker') }}">MediLocker</a></li>
+                <li><a href="{{ url_for('about') }}">About</a></li>
+                <li><a href="{{ url_for('contact') }}" class="active">Contact</a></li>
+                <li><a href="{{ url_for('login') }}">Logout</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <section class="about-section">
+            <h1>About ONE MED HUB</h1>
+            <p>We are dedicated to revolutionizing healthcare through artificial intelligence.</p>
+            <div class="features">
+                <div class="feature">
+                    <h3>AI-Powered Analysis</h3>
+                    <p>Advanced medical report analysis using cutting-edge AI technology.</p>
+                </div>
+                <div class="feature">
+                    <h3>24/7 Support</h3>
+                    <p>Round-the-clock chatbot assistance for your health queries.</p>
+                </div>
+                <div class="feature">
+                    <h3>Secure Storage</h3>
+                    <p>Safe and secure storage for all your medical records.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2024 ONE MED HUB. All rights reserved.</p>
+    </footer>
+</body>
+</html>

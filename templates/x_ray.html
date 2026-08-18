@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <title>Medical Image Analyzer</title>
+    <style>
+        :root {
+            --primary-color: #0080ff;
+            --secondary-color: #0066cc;
+            --bg-light: #f5f5f5;
+            --bg-white: #ffffff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            background-color: var(--bg-light);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .main-header {
+            font-size: 2.5rem;
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+
+        .sub-header {
+            font-size: 1.5rem;
+            color: var(--secondary-color);
+            margin-bottom: 15px;
+        }
+
+        .disclaimer {
+            color: red;
+            font-style: italic;
+            font-size: 0.8rem;
+            margin-bottom: 20px;
+        }
+
+        .content-wrapper {
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            gap: 20px;
+        }
+
+        .sidebar {
+            background-color: var(--bg-white);
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .select-input {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .main-content {
+            background-color: var(--bg-white);
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .upload-section {
+            margin-bottom: 20px;
+        }
+
+        .button {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        .button:hover {
+            background-color: var(--secondary-color);
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .prediction-box {
+            background-color: #e5f3ff;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border-left: 5px solid var(--secondary-color);
+        }
+
+        .confidence-bar {
+            background-color: #e0e0e0;
+            border-radius: 5px;
+            height: 20px;
+            width: 100%;
+            margin: 10px 0;
+        }
+
+        .tabs {
+            margin-bottom: 15px;
+        }
+
+        .tab-btn {
+            padding: 8px 16px;
+            border: none;
+            background: none;
+            cursor: pointer;
+        }
+
+        .tab-btn.active {
+            border-bottom: 2px solid var(--primary-color);
+            color: var(--primary-color);
+        }
+
+        .tab-content {
+            display: none;
+            padding: 15px;
+            background-color: var(--bg-light);
+            border-radius: 5px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .analysis-text {
+            max-height: 500px;
+            overflow-y: auto;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            line-height: 1.8;
+        }
+
+        .summary-section {
+            margin-bottom: 20px;
+            border-left: 3px solid var(--primary-color);
+            padding-left: 15px;
+        }
+
+        .summary-section h4 {
+            color: var(--secondary-color);
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+
+        .summary-list {
+            list-style-type: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .summary-list li {
+            margin-bottom: 8px;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .summary-list li:before {
+            content: "•";
+            color: var(--primary-color);
+            position: absolute;
+            left: 0;
+            font-weight: bold;
+        }
+
+        .key-finding {
+            background-color: #e5f3ff;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+
+        .recommendation {
+            background-color: #fff3e0;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+
+        .image-preview img {
+            max-width: 100%;
+            max-height: 300px;
+            width: auto;
+            height: auto;
+            display: block;
+            margin: 0 auto;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav>
+            <div class="navbar-logo">
+                <img src="{{ url_for('static', filename='img/logo.png') }}" alt="One Med Hub Logo">
+                <span>One Med Hub</span>
+            </div>
+            <ul>
+              <li><a href="{{ url_for('serve_html') }}" class="active">Home</a></li>
+              <li><a href="{{ url_for('chatbot') }}">Chatbot</a></li>
+              <li><a href="{{ url_for('x_ray') }}">Analysis</a></li>
+              <li><a href="{{ url_for('medilocker') }}">MediLocker</a></li>
+              <li><a href="{{ url_for('about') }}">About</a></li>
+              <li><a href="{{ url_for('contact') }}">Contact</a></li>
+              <li><a href="{{ url_for('login') }}">Logout</a></li>
+            </ul>
+        </nav>
+    </header>
+    <div class="container">
+        <h1 class="main-header">Medical Image Analyzer</h1>
+        <p class="disclaimer">This tool is for educational purposes only and should not be used for actual medical diagnosis.</p>
+
+        <div class="content-wrapper">
+            <div class="sidebar">
+                <h2 class="sub-header">Configuration</h2>
+                <div class="config-form">
+                    <select id="modelSelect" class="select-input">
+                        <option value="gemini-1.5-flash">gemini-1.5-flash</option>
+                        <option value="gemini-1.5-pro">gemini-1.5-pro</option>
+                        <option value="gemini-1.5-pro-vision">gemini-1.5-pro-vision</option>
+                        <option value="gemini-1.5-pro-latest">gemini-1.5-pro-latest</option>
+                    </select>
+
+                    <select id="imageType" class="select-input">
+                        <option value="X-ray">X-ray</option>
+                        <option value="CT Scan">CT Scan</option>
+                        <option value="MRI">MRI</option>
+                        <option value="Ultrasound">Ultrasound</option>
+                        <option value="Mammography">Mammography</option>
+                        <option value="PET Scan">PET Scan</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="main-content">
+                <h2 class="sub-header">Upload Medical Image</h2>
+                <div class="upload-section">
+                    <input type="file" id="imageUpload" accept=".jpg,.jpeg,.png,.dcm" class="file-input">
+                    <button id="analyzeBtn" class="button">Analyze Image</button>
+                </div>
+
+                <div class="results-grid">
+                    <div class="image-preview">
+                        <h3>Uploaded Image</h3>
+                        <img id="previewImage" src="" alt="" style="display: none;">
+                    </div>
+                    <div class="image-info">
+                        <h3>Image Information</h3>
+                        <div id="fileDetails" class="file-details"></div>
+                    </div>
+                </div>
+
+                <div id="analysisResult" class="analysis-result" style="display: none;">
+                    <div class="prediction-box">
+                        <h3>AI Analysis Result</h3>
+                        <div id="predictionText"></div>
+                        <div class="confidence-bar">
+                            <div id="confidenceLevel"></div>
+                        </div>
+                    </div>
+                    <div class="tabs">
+                        <button class="tab-btn active" data-tab="summary">Analysis Summary</button>
+                    </div>
+                    <div id="summaryTab" class="tab-content active">
+                        <div class="analysis-text"></div>
+                    </div>
+                    <div id="rawTab" class="tab-content">
+                        <pre id="rawJson"></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const imageUpload = document.getElementById('imageUpload');
+            const analyzeBtn = document.getElementById('analyzeBtn');
+            const previewImage = document.getElementById('previewImage');
+            const fileDetails = document.getElementById('fileDetails');
+            const analysisResult = document.getElementById('analysisResult');
+            
+            // Preview image on file selection
+            imageUpload.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        previewImage.src = e.target.result;
+                        previewImage.style.display = 'block';
+                        
+                        // Show file details
+                        fileDetails.innerHTML = `
+                            <p>Filename: ${file.name}</p>
+                            <p>File size: ${(file.size / 1024).toFixed(1)} KB</p>
+                            <p>Image type: ${document.getElementById('imageType').value}</p>
+                        `;
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+            
+            // Handle analysis
+            analyzeBtn.addEventListener('click', function() {
+                const file = imageUpload.files[0];
+                if (!file) {
+                    alert('Please select a file first');
+                    return;
+                }
+                
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('image_type', document.getElementById('imageType').value);
+                formData.append('model_name', document.getElementById('modelSelect').value);
+                
+                // Show loading state
+                analyzeBtn.disabled = true;
+                analyzeBtn.textContent = 'Analyzing...';
+                
+                fetch('/analyze_x_ray', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(result => {
+                    if (result.error) {
+                        throw new Error(result.error);
+                    }
+                    
+                    // Display results
+                    analysisResult.style.display = 'block';
+                    
+                    // Update prediction box
+                    const confidence = Math.round(result.confidence * 100);
+                    document.getElementById('predictionText').innerHTML = `
+                        <p style="font-size: 1.3rem; font-weight: bold;">Assessment: ${result.prediction}</p>
+                        <p>Confidence: ${confidence}%</p>
+                    `;
+                    document.getElementById('confidenceLevel').style.width = `${confidence}%`;
+                    
+                    // Update tabs
+                    document.querySelector('#summaryTab .analysis-text').innerHTML = formatAnalysisText(result.raw_analysis);
+                    document.getElementById('rawJson').textContent = JSON.stringify(result, null, 2);
+                })
+                .catch(error => {
+                    alert('Analysis failed: ' + error.message);
+                })
+                .finally(() => {
+                    analyzeBtn.disabled = false;
+                    analyzeBtn.textContent = 'Analyze Image';
+                });
+            });
+            
+            // Tab switching
+            document.querySelectorAll('.tab-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const tabName = this.dataset.tab;
+                    
+                    // Update active button
+                    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    // Update active content
+                    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+                    document.getElementById(`${tabName}Tab`).classList.add('active');
+                });
+            });
+        });
+
+        function formatAnalysisText(text) {
+            const sections = {
+                observations: [],
+                abnormalities: [],
+                diagnoses: [],
+                recommendations: []
+            };
+            
+            const lines = text.split('\n');
+            let currentSection = null;
+            
+            lines.forEach(line => {
+                line = line.trim();
+                if (!line) return;
+                
+                if (line.match(/1\.\s*Detailed description|observe|observation/i)) {
+                    currentSection = 'observations';
+                } else if (line.match(/2\.\s*abnormalit|findings/i)) {
+                    currentSection = 'abnormalities';
+                } else if (line.match(/3\.\s*diagnos|assessment/i)) {
+                    currentSection = 'diagnoses';
+                } else if (line.match(/4\.\s*Confidence|5\.\s*Recommendations|recommend/i)) {
+                    currentSection = 'recommendations';
+                } else if (currentSection && !line.startsWith('PREDICTION:')) {
+                    sections[currentSection].push(line);
+                }
+            });
+
+            // Add fallback text for empty sections
+            return `
+                <div class="summary-section">
+                    <h4>Key Observations</h4>
+                    <ul class="summary-list">
+                        ${sections.observations.length > 0 
+                            ? sections.observations.map(item => `<li>${item}</li>`).join('') 
+                            : '<li>No observations available.</li>'}
+                    </ul>
+                </div>
+                
+                <div class="summary-section">
+                    <h4>Findings & Abnormalities</h4>
+                    <div class="key-finding">
+                        <ul class="summary-list">
+                            ${sections.abnormalities.length > 0 
+                                ? sections.abnormalities.map(item => `<li>${item}</li>`).join('') 
+                                : '<li>No abnormalities or findings available.</li>'}
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="summary-section">
+                    <h4>Diagnostic Assessment</h4>
+                    <ul class="summary-list">
+                        ${sections.diagnoses.length > 0 
+                            ? sections.diagnoses.map(item => `<li>${item}</li>`).join('') 
+                            : '<li>No diagnostic assessment available.</li>'}
+                    </ul>
+                </div>
+                
+                <div class="summary-section">
+                    <h4>Recommendations</h4>
+                    <div class="recommendation">
+                        <ul class="summary-list">
+                            ${sections.recommendations.length > 0 
+                                ? sections.recommendations.map(item => `<li>${item}</li>`).join('') 
+                                : '<li>No recommendations available.</li>'}
+                        </ul>
+                    </div>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>

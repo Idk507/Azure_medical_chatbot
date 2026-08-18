@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MediLocker - One Med Hub</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            font-family: 'Inter', Arial, sans-serif;
+        }
+        .iframe-container {
+            position: absolute;
+            top: 60px; /* Height of your navbar */
+            left: 0;
+            width: 100%;
+            height: calc(100vh - 60px); /* Full height minus navbar */
+            border: none;
+        }
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav>
+            <div class="navbar-logo">
+                <img src="{{ url_for('static', filename='img/logo.png') }}" alt="One Med Hub Logo">
+                <span>ONE MED HUB</span>
+            </div>
+            <ul>
+                <li><a href="{{ url_for('serve_html') }}">Home</a></li>
+                <li><a href="{{ url_for('chatbot') }}">Chatbot</a></li>
+                <li><a href="{{ url_for('x_ray') }}">Analysis</a></li>
+                <li><a href="{{ url_for('medilocker') }}" class="active">MediLocker</a></li>
+                <li><a href="{{ url_for('about') }}">About</a></li>
+                <li><a href="{{ url_for('contact') }}">Contact</a></li>
+                <li><a href="{{ url_for('logout') }}">Logout</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <div class="iframe-container">
+        <iframe src="{{ streamlit_url }}" allowfullscreen></iframe>
+    </div>
+</body>
+</html>

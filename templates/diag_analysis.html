@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <title>Lab Report Analyzer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            max-width: 600px;
+            width: 100%;
+        }
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+        .upload-form {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .file-input {
+            padding: 20px;
+            border: 2px dashed #ddd;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .submit-btn {
+            padding: 12px 24px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .submit-btn:hover {
+            background-color: #0056b3;
+        }
+        #error-message {
+            color: red;
+            margin-top: 10px;
+            display: none;
+        }
+        .error-alert {
+            background-color: #ffebee;
+            color: #c62828;
+            padding: 12px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            border: 1px solid #ffcdd2;
+        }
+        .hint {
+            color: #666;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+        .submit-btn:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        .back-to-chat {
+            display: inline-flex;
+            align-items: center;
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 500;
+            margin-bottom: 20px;
+            transition: var(--transition);
+        }
+        
+        .back-to-chat svg {
+            margin-right: 8px;
+        }
+        
+        .back-to-chat:hover {
+            color: var(--accent-color);
+            transform: translateX(-5px);
+        }
+        
+        .container {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: var(--shadow-md);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .upload-section {
+            text-align: center;
+            padding: 2rem;
+            border: 2px dashed var(--primary-color);
+            border-radius: 10px;
+            background-color: #f9f9f9;
+            margin-bottom: 2rem;
+        }
+        
+        .language-selector {
+            max-width: 300px;
+            margin: 2rem auto;
+        }
+        
+        .main-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+            margin-top: 80px; /* Add top margin to account for fixed navbar */
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav>
+            <div class="navbar-logo">
+                <img src="{{ url_for('static', filename='img/logo.png') }}" alt="One Med Hub Logo">
+                <span>ONE MED HUB</span>
+            </div>
+            <ul>
+                <li><a href="{{ url_for('serve_html') }}">Home</a></li>
+                <li><a href="{{ url_for('chatbot') }}" class="active">Chatbot</a></li>
+                <li><a href="{{ url_for('x_ray') }}">Analysis</a></li>
+                <li><a href="{{ url_for('medilocker') }}">MediLocker</a></li>
+                <li><a href="{{ url_for('about') }}">About</a></li>
+                <li><a href="{{ url_for('contact') }}">Contact</a></li>
+                <li><a href="{{ url_for('login') }}">Logout</a></li>
+            </ul>
+        </nav>
+    </header>
+    <div class="main-container">
+        <div class="container">
+            <a href="{{ url_for('chatbot') }}" class="back-to-chat">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M19 12H5M12 19l-7-7 7-7"/>
+                </svg>
+                Back to Chatbot
+            </a>
+            
+            <div class="container">
+                <h1>Lab Report Analyzer</h1>
+                <p>Upload an image of a handwritten prescription or a PDF lab report for analysis.</p>
+                {% if error %}
+                <div class="error-alert">{{ error }}</div>
+                {% endif %}
+                <form action="/upload_diag" method="post" enctype="multipart/form-data" class="upload-form" onsubmit="return validateAndSubmit()">
+                    <div class="file-input">
+                        <input type="file" name="file" accept="application/pdf" id="file-input">
+                        <p class="hint">Only PDF files are supported</p>
+                    </div>
+                    <button type="submit" class="submit-btn" id="submitBtn">Analyze Report</button>
+                </form>
+                <div id="error-message"></div>
+            </div>
+        </div>
+    </div>
+    <script>
+        function validateAndSubmit() {
+            const fileInput = document.getElementById('file-input');
+            const submitBtn = document.getElementById('submitBtn');
+            const errorMessage = document.getElementById('error-message');
+            
+            errorMessage.style.display = 'none';
+            
+            if (!fileInput.files || fileInput.files.length === 0) {
+                showError('Please select a file to upload');
+                return false;
+            }
+            
+            const file = fileInput.files[0];
+            if (!file.name.toLowerCase().endsWith('.pdf')) {
+                showError('Please upload only PDF files');
+                return false;
+            }
+            
+            // Disable button to prevent double submission
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Uploading...';
+            return true;
+        }
+
+        function showError(message) {
+            const errorMessage = document.getElementById('error-message');
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+        }
+
+        // Show results section if it exists
+        document.addEventListener('DOMContentLoaded', function() {
+            {% if show_results %}
+                document.getElementById('resultsContainer').style.display = 'block';
+                document.getElementById('uploadForm').style.display = 'none';
+                document.getElementById('backButton').style.display = 'inline-block';
+            {% endif %}
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ page_title }} - One Med Hub</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .construction-container {
+            text-align: center;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .construction-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            color: var(--primary-color);
+        }
+        
+        .construction-title {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            color: var(--primary-color);
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav>
+            <div class="navbar-logo">
+                <img src="{{ url_for('static', filename='img/logo.png') }}" alt="One Med Hub Logo">
+                <span>One Med Hub</span>
+            </div>
+            <ul>
+                <li><a href="{{ url_for('serve_html') }}">Home</a></li>
+                <li><a href="{{ url_for('chatbot') }}" {% if page_title == 'Chatbot' %}class="active"{% endif %}>Chatbot</a></li>
+                <li><a href="{{ url_for('x_ray') }}" {% if page_title == 'x_ray' %}class="active"{% endif %}>Analysis</a></li>
+                <li><a href="{{ url_for('medilocker') }}" {% if page_title == 'MediLocker' %}class="active"{% endif %}>MediLocker</a></li>
+                <li><a href="{{ url_for('about') }}" {% if page_title == 'About' %}class="active"{% endif %}>About</a></li>
+                <li><a href="{{ url_for('contact') }}" {% if page_title == 'Contact' %}class="active"{% endif %}>Contact</a></li>
+                <li><a href="{{ url_for('login') }}">Logout</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <section class="hero">
+            <h1>{{ page_title }}</h1>
+            <p>Your healthcare information, all in one place.</p>
+        </section>
+
+        <section class="construction-container">
+            <div class="construction-icon">🚧</div>
+            <h2 class="construction-title">Under Construction</h2>
+            <p>We're currently working on this feature. Please check back soon!</p>
+            <div style="margin-top: 2rem;">
+                <a href="{{ url_for('serve_html') }}" class="cta-button secondary">Return Home</a>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2025 ONE MED HUB. All rights reserved.</p>
+    </footer>
+</body>
+</html>

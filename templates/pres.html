@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Prescription Analyzer</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://atlas.microsoft.com/sdk/javascript/mapcontrol/2/atlas.min.css" type="text/css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        #mapContainer {
+            position: relative;
+            min-height: 500px;
+            width: 100%;
+            margin-top: 20px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        #myMap {
+            height: 100%;
+            min-height: 500px;
+            width: 100%;
+        }
+        .map-loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+        .pinStyle {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background-color: red;
+            border: 2px solid white;
+        }
+        .userPinStyle {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background-color: blue;
+            border: 2px solid white;
+        }
+        .btn-group .btn {
+            padding: .25rem .5rem;
+            font-size: .875rem;
+            margin: 0 1px;
+        }
+        .btn-group .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .table td {
+            vertical-align: middle;
+        }
+        .analysis-section {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+        .analysis-section h5 {
+            margin-bottom: 10px;
+            color: #0d6efd;
+        }
+        .analysis-section div {
+            line-height: 1.6;
+        }
+        .language-select {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .language-group {
+            padding: 0.5rem 1rem;
+            font-weight: bold;
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+        }
+        .chat-box {
+            display: flex;
+            align-items: center;
+            background-color: #2a2a2a;
+            border-radius: 15px;
+            padding: 10px;
+            width: 100%;
+            margin-bottom: 20px;
+            gap: 10px;
+        }
+        .chat-input {
+            flex: 1;
+            border: none;
+            background: transparent;
+            color: white;
+            font-size: 16px;
+            outline: none;
+            padding: 8px;
+        }
+        .icon-btn {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            margin-left: 10px;
+            padding: 5px;
+        }
+        .icon-btn img {
+            width: 24px;
+            height: 24px;
+        }
+        .search-btn {
+            display: flex;
+            align-items: center;
+            background: #0d6efd;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 8px 15px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-left: 10px;
+        }
+        .search-btn:hover {
+            background: #0b5ed7;
+        }
+        .search-btn svg {
+            width: 16px;
+            height: 16px;
+            margin-right: 5px;
+        }
+        .upload-btn {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 5px;
+            color: #0d6efd;
+            display: flex;
+            align-items: center;
+        }
+        .upload-btn:hover {
+            color: #0b5ed7;
+        }
+        .upload-btn svg {
+            width: 24px;
+            height: 24px;
+        }
+        #chatFileInput {
+            display: none;
+        }
+        .language-dropdown {
+            background: transparent;
+            border: 1px solid #0d6efd;
+            color: #0d6efd;
+            border-radius: 20px;
+            padding: 5px 10px;
+            margin-left: 10px;
+            font-size: 14px;
+        }
+        .language-dropdown:focus {
+            outline: none;
+            border-color: #0b5ed7;
+        }
+        /* Additional styles for condition indicators */
+        .condition-high {
+            border-left: 5px solid #28a745;
+            background-color: rgba(40, 167, 69, 0.1);
+        }
+        .condition-medium {
+            border-left: 5px solid #ffc107;
+            background-color: rgba(255, 193, 7, 0.1);
+        }
+        .condition-low {
+            border-left: 5px solid #dc3545;
+            background-color: rgba(220, 53, 69, 0.1);
+        }
+        .main-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+            margin-top: 80px; /* Add top margin to account for fixed navbar */
+        }
+        
+        .back-to-chat {
+            display: inline-flex;
+            align-items: center;
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 500;
+            margin-bottom: 20px;
+            transition: var(--transition);
+        }
+        
+        .back-to-chat svg {
+            margin-right: 8px;
+        }
+        
+        .back-to-chat:hover {
+            color: var(--accent-color);
+            transform: translateX(-5px);
+        }
+        
+        .container {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: var(--shadow-md);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .upload-section {
+            text-align: center;
+            padding: 2rem;
+            border: 2px dashed var(--primary-color);
+            border-radius: 10px;
+            background-color: #f9f9f9;
+            margin-bottom: 2rem;
+        }
+        
+        .language-selector {
+            max-width: 300px;
+            margin: 2rem auto;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <nav>
+            <div class="navbar-logo">
+                <img src="{{ url_for('static', filename='img/logo.png') }}" alt="One Med Hub Logo">
+                <span>One Med Hub</span>
+            </div>
+            <ul>
+              <li><a href="{{ url_for('serve_html') }}" class="active">Home</a></li>
+              <li><a href="{{ url_for('chatbot') }}">Chatbot</a></li>
+              <li><a href="{{ url_for('x_ray') }}">Analysis</a></li>
+              <li><a href="{{ url_for('medilocker') }}">MediLocker</a></li>
+              <li><a href="{{ url_for('about') }}">About</a></li>
+              <li><a href="{{ url_for('contact') }}">Contact</a></li>
+              <li><a href="{{ url_for('login') }}">Logout</a></li>
+            </ul>
+        </nav>
+    </header>
+    <div class="main-container">
+        <div class="container">
+            <a href="{{ url_for('chatbot') }}" class="back-to-chat">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M19 12H5M12 19l-7-7 7-7"/>
+                </svg>
+                Back to Chatbot
+            </a>
+            
+            <div class="container mt-5">
+                <h1>Prescription Reader</h1>
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="chat-box mb-4">
+                            <input type="text" class="chat-input" placeholder="Ask about your prescription...">
+                            <select class="language-dropdown" id="language" name="language">
+                                {% for lang, code in languages.items() %}
+                                <option value="{{ lang }}">{{ lang }}</option>
+                                {% endfor %}
+                            </select>
+                            <label class="upload-btn" for="chatFileInput" title="Upload Prescription">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2z" />
+                                </svg>
+                            </label>
+                            <input type="file" id="chatFileInput" accept="image/*">
+                            <button class="search-btn" id="analyzeBtn" disabled>
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                </svg>
+                                Analyze
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="results" style="display: none;">
+                    <div class="mb-4">
+                        <h3>Extracted Text</h3>
+                        <pre id="extractedText" class="border p-3"></pre>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <h3>Analysis</h3>
+                        <div id="analysisResult" class="border p-3">
+                            <div class="analysis-content"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Condition Analysis Section -->
+                    <div class="mb-4" id="condition-card" style="display: none;">
+                        <h3>Potential Condition Analysis</h3>
+                        <div id="condition-result" class="border p-3"></div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <h3>Medicines</h3>
+                        <div id="medicinesList"></div>
+                    </div>
+                    
+                    <div class="mb-4" id="pharmacy-section">
+                        <h3>Nearby Pharmacies</h3>
+                        <div class="alert alert-info pharmacy-info">
+                            Showing nearby pharmacies, sorted by shortest distance
+                        </div>
+                        <div class="table-responsive mb-3">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Address</th>
+                                        <th>Distance</th>
+                                        <th>Info</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="pharmaciesTable"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <h3>Map</h3>
+                        <div id="mapContainer">
+                            <div id="myMap"></div>
+                            <div class="map-loading" style="display: none;">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Loading map...</span>
+                                </div>
+                                <p class="mt-2">Loading map...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://atlas.microsoft.com/sdk/javascript/mapcontrol/2/atlas.min.js"></script>
+    <script>
+        let map = null;
+        let mapInitialized = false;
+        let userLocation = null;
+
+        // Add getCurrentPosition function
+        function getUserLocation() {
+            return new Promise((resolve, reject) => {
+                if ("geolocation" in navigator) {
+                    navigator.geolocation.getCurrentPosition(
+                        position => {
+                            userLocation = {
+                                latitude: position.coords.latitude,
+                                longitude: position.coords.longitude
+                            };
+                            resolve(userLocation);
+                        },
+                        error => {
+                            console.warn("Geolocation error:", error);
+                            resolve(null);
+                        },
+                        {
+                            enableHighAccuracy: true,
+                            timeout: 5000,
+                            maximumAge: 0
+                        }
+                    );
+                } else {
+                    console.warn("Geolocation not supported");
+                    resolve(null);
+                }
+            });
+        }
+
+        function showMapLoading() {
+            document.querySelector('.map-loading').style.display = 'block';
+        }
+
+        function hideMapLoading() {
+            document.querySelector('.map-loading').style.display = 'none';
+        }
+
+        // Completely rewritten map initialization function for better reliability
+        function initializeMap(mapData) {
+            showMapLoading();
+            const mapDiv = document.getElementById('myMap');
+            
+            // Clear previous map instance
+            if (map) {
+                try {
+                    map.dispose();
+                } catch (e) {
+                    console.warn("Error disposing map:", e);
+                }
+                map = null;
+            }
+
+            try {
+                console.log("Initializing map with data:", mapData);
+                
+                if (typeof atlas === 'undefined') {
+                    throw new Error('Azure Maps SDK not loaded');
+                }
+
+                // Create map instance directly with the provided Azure Maps key
+                map = new atlas.Map('myMap', {
+                    center: [mapData.center.longitude, mapData.center.latitude],
+                    zoom: 14,
+                    authOptions: {
+                        authType: 'subscriptionKey',
+                        subscriptionKey: mapData.apiKey
+                    },
+                    style: 'road'
+                });
+
+                // Create data source and layers when map is ready
+                map.events.add('ready', function() {
+                    console.log("Map is ready");
+                    // Create data source for map objects
+                    var dataSource = new atlas.source.DataSource();
+                    map.sources.add(dataSource);
+                    
+                    // Add user location marker
+                    const userPin = new atlas.HtmlMarker({
+                        htmlContent: '<div class="userPinStyle"></div>',
+                        position: [mapData.center.longitude, mapData.center.latitude],
+                        pixelOffset: [0, 0]
+                    });
+                    
+                    // Create a popup for the user marker
+                    const userPopup = new atlas.Popup({
+                        content: '<div style="padding:10px;"><strong>Your Location</strong></div>',
+                        position: [mapData.center.longitude, mapData.center.latitude],
+                        pixelOffset: [0, -15]
+                    });
+                    
+                    // Add the user marker to the map
+                    map.markers.add(userPin);
+                    
+                    // Add event listener to show popup when marker is clicked
+                    map.events.add('click', userPin, function() {
+                        userPopup.open(map);
+                    });
+                    
+                    // Add pharmacy markers
+                    if (mapData.pharmacies && mapData.pharmacies.length > 0) {
+                        mapData.pharmacies.forEach(pharmacy => {
+                            // Create marker for pharmacy
+                            const pharmacyPin = new atlas.HtmlMarker({
+                                htmlContent: '<div class="pinStyle"></div>',
+                                position: [pharmacy.longitude, pharmacy.latitude],
+                                pixelOffset: [0, 0]
+                            });
+                            
+                            // Create popup for pharmacy
+                            const pharmacyPopup = new atlas.Popup({
+                                content: `<div style="padding:10px;">
+                                    <strong>${pharmacy.name}</strong><br>
+                                    ${pharmacy.address}<br><br>
+                                    <a href="https://www.google.com/maps/dir/?api=1&destination=${pharmacy.latitude},${pharmacy.longitude}" target="_blank">Get Directions</a>
+                                </div>`,
+                                position: [pharmacy.longitude, pharmacy.latitude],
+                                pixelOffset: [0, -15]
+                            });
+                            
+                            // Add marker to map
+                            map.markers.add(pharmacyPin);
+                            
+                            // Add event listener for marker click
+                            map.events.add('click', pharmacyPin, function() {
+                                pharmacyPopup.open(map);
+                            });
+                        });
+                    } else {
+                        console.warn("No pharmacies data available");
+                    }
+                    
+                    hideMapLoading();
+                    mapInitialized = true;
+                });
+
+                // Add error handler for map
+                map.events.add('error', function(e) {
+                    console.error('Azure Maps error:', e.error);
+                    mapDiv.innerHTML = '<div class="alert alert-danger">Map error: ' + e.error + '</div>';
+                    hideMapLoading();
+                });
+
+            } catch (error) {
+                console.error('Azure Maps initialization error:', error);
+                mapDiv.innerHTML = '<div class="alert alert-danger">Failed to load map: ' + error.message + '</div>';
+                hideMapLoading();
+            }
+        }
+
+        document.getElementById('chatFileInput').addEventListener('change', function(e) {
+            const analyzeBtn = document.getElementById('analyzeBtn');
+            if (e.target.files.length > 0) {
+                const fileName = e.target.files[0].name;
+                document.querySelector('.chat-input').placeholder = `Selected file: ${fileName}`;
+                analyzeBtn.disabled = false;
+            } else {
+                document.querySelector('.chat-input').placeholder = 'Ask about your prescription...';
+                analyzeBtn.disabled = true;
+            }
+        });
+
+        document.getElementById('analyzeBtn').addEventListener('click', async function() {
+            const fileInput = document.getElementById('chatFileInput');
+            const languageSelect = document.getElementById('language');
+            const mapContainer = document.getElementById('mapContainer');
+            const pharmacySection = document.getElementById('pharmacy-section');
+            
+            if (!fileInput.files.length) {
+                alert('Please select a prescription image first');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('prescription', fileInput.files[0]);
+            formData.append('language', languageSelect.value);
+
+            try {
+                // Get user location before making the API call
+                await getUserLocation();
+                
+                if (userLocation) {
+                    formData.append('latitude', userLocation.latitude);
+                    formData.append('longitude', userLocation.longitude);
+                }
+                
+                // Show loading state
+                this.disabled = true;
+                this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Analyzing...';
+                
+                const response = await fetch('/pres_analyze', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                if (response.ok) {
+                    document.getElementById('results').style.display = 'block';
+                    document.getElementById('extractedText').textContent = data.ocr_text;
+                    
+                    // Format and display analysis
+                    const analysisContent = document.querySelector('.analysis-content');
+                    const analysis = data.analysis;
+                    
+                    // Split analysis into sections
+                    const sections = analysis.split('\n\n').filter(section => section.trim());
+                    const formattedAnalysis = sections.map(section => {
+                        const [title, ...content] = section.split('\n');
+                        return `
+                            <div class="analysis-section mb-3">
+                                <h5 class="text-primary">${title}</h5>
+                                <div class="ps-3">
+                                    ${content.map(line => {
+                                        if (line.startsWith('-')) {
+                                            return `<div class="ps-2">${line}</div>`;
+                                        }
+                                        return `<div>${line}</div>`;
+                                    }).join('')}
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                    
+                    analysisContent.innerHTML = formattedAnalysis;
+                    
+                    // Display condition analysis if available
+                    const conditionCard = document.getElementById('condition-card');
+                    const conditionResult = document.getElementById('condition-result');
+                    
+                    if (data.condition_analysis) {
+                        conditionCard.style.display = 'block';
+                        
+                        const condition = data.condition_analysis;
+                        let confidenceClass = 'condition-low';
+                        
+                        if (condition.confidence === 'High') {
+                            confidenceClass = 'condition-high';
+                        } else if (condition.confidence === 'Medium') {
+                            confidenceClass = 'condition-medium';
+                        }
+                        
+                        let alternativesHtml = '';
+                        if (condition.alternative_conditions && condition.alternative_conditions.length > 0) {
+                            alternativesHtml = `
+                                <div class="mt-3">
+                                    <h6>Alternative possible conditions:</h6>
+                                    <ul>
+                                        ${condition.alternative_conditions.map(alt => `<li>${alt}</li>`).join('')}
+                                    </ul>
+                                </div>
+                            `;
+                        }
+                        
+                        conditionResult.innerHTML = `
+                            <div class="p-3 ${confidenceClass} rounded">
+                                <h4>Primary condition: ${condition.primary_condition}</h4>
+                                <p><strong>Confidence:</strong> <span style="color:${confidenceClass === 'condition-high' ? 'green' : confidenceClass === 'condition-medium' ? 'orange' : 'red'}">${condition.confidence}</span></p>
+                                <p><strong>Reasoning:</strong> ${condition.reasoning}</p>
+                                ${alternativesHtml}
+                            </div>
+                            <div class="alert alert-info mt-3">
+                                <small>Note: This analysis is based solely on the medications and should not be considered a diagnosis. Always consult a qualified healthcare professional.</small>
+                            </div>
+                        `;
+                    } else {
+                        conditionCard.style.display = 'none';
+                    }
+                    
+                    // Display medicines with improved error handling
+                    const medicinesList = document.getElementById('medicinesList');
+                    console.log("Medicines data:", data.medicines); // Debug logging
+                    
+                    if (data.medicines && data.medicines.length > 0) {
+                        medicinesList.innerHTML = `
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Type</th>
+                                            <th>Medicine</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${data.medicines.map(med => {
+                                            // Ensure med is properly structured as an array
+                                            if (!Array.isArray(med) || med.length < 2) {
+                                                console.warn("Invalid medicine format:", med);
+                                                return '';
+                                            }
+                                            
+                                            const medType = med[0] || 'Medicine';
+                                            const medName = med[1] || 'Unknown';
+                                            
+                                            return `
+                                                <tr>
+                                                    <td>${medType}</td>
+                                                    <td>${medName}</td>
+                                                    <td>
+                                                        <div class="btn-group" role="group">
+                                                            <a href="https://www.1mg.com/search/all?name=${encodeURIComponent(medName)}" 
+                                                            class="btn btn-sm btn-outline-success" 
+                                                            target="_blank" title="Search on 1mg">
+                                                                1mg
+                                                            </a>
+                                                            <a href="https://pharmeasy.in/search/all?name=${encodeURIComponent(medName)}" 
+                                                            class="btn btn-sm btn-outline-info" 
+                                                            target="_blank" title="Search on PharmEasy">
+                                                                PharmEasy
+                                                            </a>
+                                                            <a href="https://www.netmeds.com/catalogsearch/result/${encodeURIComponent(medName)}/all" 
+                                                            class="btn btn-sm btn-outline-primary" 
+                                                            target="_blank" title="Search on Netmeds">
+                                                                Netmeds
+                                                            </a>
+                                                            <a href="https://www.apollopharmacy.in/search-medicines/${encodeURIComponent(medName)}" 
+                                                            class="btn btn-sm btn-outline-danger" 
+                                                            target="_blank" title="Search on Apollo">
+                                                                Apollo
+                                                            </a>
+                                                            <a href="https://www.medplusmart.com/searchProduct?text=${encodeURIComponent(medName)}" 
+                                                            class="btn btn-sm btn-outline-warning" 
+                                                            target="_blank" title="Search on MedPlus">
+                                                                MedPlus
+                                                            </a>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            `;
+                                        }).join('')}
+                                    </tbody>
+                                </table>
+                            </div>`;
+                    } else {
+                        // Show error message and a manual input field for medicines
+                        medicinesList.innerHTML = `
+                            <div class="alert alert-warning">
+                                <p>No medicines were automatically detected in the prescription.</p>
+                                <div class="mt-3">
+                                    <h5>Add medication manually:</h5>
+                                    <div class="input-group mb-3">
+                                        <input type="text" id="manual-medicine" class="form-control" placeholder="Enter medication name">
+                                        <button class="btn btn-outline-primary" type="button" id="add-medicine-btn">Add</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="manual-medicines-list" class="mt-3"></div>
+                        `;
+                        
+                        // Add event listener for manual medicine addition
+                        document.getElementById('add-medicine-btn')?.addEventListener('click', function() {
+                            const medicineInput = document.getElementById('manual-medicine');
+                            const medicineName = medicineInput.value.trim();
+                            
+                            if (medicineName) {
+                                const manualMedicinesList = document.getElementById('manual-medicines-list');
+                                
+                                if (!manualMedicinesList.querySelector('table')) {
+                                    manualMedicinesList.innerHTML = `
+                                        <table class="table table-striped">
+                                            <thead>
+                                                <tr>
+                                                    <th>Type</th>
+                                                    <th>Medicine</th>
+                                                    <th>Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="manual-medicines-tbody"></tbody>
+                                        </table>
+                                    `;
+                                }
+                                
+                                const tbody = document.getElementById('manual-medicines-tbody');
+                                const row = document.createElement('tr');
+                                row.innerHTML = `
+                                    <td>Manual</td>
+                                    <td>${medicineName}</td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="https://www.1mg.com/search/all?name=${encodeURIComponent(medicineName)}" 
+                                            class="btn btn-sm btn-outline-success" 
+                                            target="_blank" title="Search on 1mg">
+                                                1mg
+                                            </a>
+                                            <a href="https://pharmeasy.in/search/all?name=${encodeURIComponent(medicineName)}" 
+                                            class="btn btn-sm btn-outline-info" 
+                                            target="_blank" title="Search on PharmEasy">
+                                                PharmEasy
+                                            </a>
+                                            <a href="https://www.netmeds.com/catalogsearch/result/${encodeURIComponent(medicineName)}/all" 
+                                            class="btn btn-sm btn-outline-primary" 
+                                            target="_blank" title="Search on Netmeds">
+                                                Netmeds
+                                            </a>
+                                        </div>
+                                    </td>
+                                `;
+                                tbody.appendChild(row);
+                                medicineInput.value = '';
+                            }
+                        });
+                    }
+                    
+                    // Display pharmacies and map
+                    const pharmaciesList = document.getElementById('pharmaciesList');
+                    
+                    if (data.pharmacies && data.pharmacies.length > 0) {
+                        pharmacySection.style.display = 'block';
+                        
+                        // Update pharmacy info alert with source information
+                        const pharmacyInfo = document.querySelector('.pharmacy-info');
+                        let sourceInfo = '';
+                        if (data.pharmacy_summary?.sources) {
+                            const sources = data.pharmacy_summary.sources;
+                            sourceInfo = 'Data sources: ';
+                            if (sources['Google Places']) {
+                                sourceInfo += `Google Places (${sources['Google Places']} results), `;
+                            }
+                            if (sources['OpenStreetMap']) {
+                                sourceInfo += `OpenStreetMap (${sources['OpenStreetMap']} results), `;
+                            }
+                            sourceInfo = sourceInfo.replace(/, $/, '');
+                        }
+                        
+                        pharmacyInfo.innerHTML = `Found ${data.pharmacies.length} pharmacies within ${data.pharmacy_summary?.search_radius_km || 5} km radius, sorted by distance. ${sourceInfo}`;
+                        
+                        // Show pharmacy list in table with enhanced Google data
+                        const pharmaciesTable = document.getElementById('pharmaciesTable');
+                        pharmaciesTable.innerHTML = data.pharmacies.map((pharmacy, index) => {
+                            const distance = pharmacy.distance.toFixed(2);
+                            const walkingTime = pharmacy.walking_time || Math.round(pharmacy.distance * 12);
+                            const drivingTime = pharmacy.driving_time || Math.round(pharmacy.distance * 2);
+                            
+                            // Add a marker for closest pharmacy
+                            const closestBadge = index === 0 ? 
+                                '<span class="badge bg-success ms-2">Closest</span>' : '';
+                            
+                            // Add rating if available
+                            const ratingInfo = pharmacy.rating ? 
+                                `<div><strong>Rating:</strong> ${pharmacy.rating.toFixed(1)}/5</div>` : '';
+                            
+                            // Add open status if available
+                            const openStatusBadge = pharmacy.open_now !== undefined ? 
+                                `<span class="badge ${pharmacy.open_now ? 'bg-success' : 'bg-danger'} me-2">
+                                    ${pharmacy.open_now ? 'Open' : 'Closed'}
+                                </span>` : '';
+                            
+                            return `
+                                <tr>
+                                    <td>
+                                        ${pharmacy.name}${closestBadge}
+                                        <div class="small text-muted">via ${pharmacy.source || 'API'}</div>
+                                    </td>
+                                    <td>${pharmacy.address}</td>
+                                    <td>
+                                        <strong>${distance} km</strong><br>
+                                        <small class="text-muted">
+                                            ~${walkingTime} min walk<br>
+                                            ~${drivingTime} min drive
+                                        </small>
+                                    </td>
+                                    <td>
+                                        ${openStatusBadge}
+                                        ${ratingInfo}
+                                        ${pharmacy.website ? `<a href="${pharmacy.website}" class="small d-block" target="_blank">Website</a>` : ''}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <a href="${pharmacy.map_url || `https://www.google.com/maps/dir/?api=1&destination=${pharmacy.latitude},${pharmacy.longitude}`}" 
+                                            class="btn btn-sm btn-primary" 
+                                            target="_blank">
+                                                Directions
+                                            </a>
+                                            <a href="tel:${pharmacy.phone || ''}" 
+                                            class="btn btn-sm btn-outline-secondary ${pharmacy.phone ? '' : 'disabled'}"
+                                            ${pharmacy.phone ? '' : 'disabled'}>
+                                                Call
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>`;
+                        }).join('');
+                        
+                        // Show and populate map with the map data
+                        if (data.map_data) {
+                            mapContainer.style.display = 'block';
+                            initializeMap(data.map_data);
+                        } else {
+                            mapContainer.style.display = 'none';
+                            mapContainer.innerHTML = '<div class="alert alert-warning">Map data not available</div>';
+                        }
+                    } else {
+                        pharmacySection.style.display = 'none';
+                        mapContainer.style.display = 'none';
+                    }
+                } else {
+                    alert(data.error || 'An error occurred');
+                }
+            } catch (error) {
+                alert('An error occurred while processing the request');
+                console.error(error);
+                mapContainer.innerHTML = '<div class="alert alert-danger">Error: ' + error.message + '</div>';
+            } finally {
+                // Reset button state
+                this.disabled = false;
+                this.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>Analyze';
+            }
+        });
+
+        // Helper functions for distance calculations
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371; // Earth's radius in kilometers
+            const dLat = deg2rad(lat2 - lat1);
+            const dLon = deg2rad(lon2 - lon1);
+            
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                    Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * 
+                    Math.sin(dLon/2) * Math.sin(dLon/2);
+            
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            const distance = R * c;
+            
+            // Return distance rounded to 2 decimal places
+            return Math.round(distance * 100) / 100;
+        }
+
+        function deg2rad(deg) {
+            return deg * (Math.PI/180);
+        }
+    </script>
+</body>
+</html>
